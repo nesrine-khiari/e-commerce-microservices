@@ -1,0 +1,13 @@
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\UserServiceApplication.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\aggregate\User.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\repository\UserProjectionRepository.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\command\CreateUserCommand.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\controller\UserController.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\dto\DepositDTO.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\projection\UserProjection.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\dto\UserDto.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\configuration\EventProcessorConfig.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\model\UserModel.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\service\UserService.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\query\GetUsersQuery.java
+C:\Users\omarm\IdeaProjects\projet_microservices\user-service\src\main\java\com\userservice\dto\WithdrawDTO.java
