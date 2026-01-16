@@ -1,0 +1,14 @@
+com\userservice\controller\UserController.class
+com\userservice\query\GetUsersQuery.class
+com\userservice\UserServiceApplication.class
+com\userservice\command\CreateUserCommand$CreateUserCommandBuilder.class
+com\userservice\dto\WithdrawDTO.class
+com\userservice\configuration\EventProcessorConfig.class
+com\userservice\service\UserService.class
+com\userservice\repository\UserProjectionRepository.class
+com\userservice\model\UserModel.class
+com\userservice\command\CreateUserCommand.class
+com\userservice\aggregate\User.class
+com\userservice\dto\UserDto.class
+com\userservice\projection\UserProjection.class
+com\userservice\dto\DepositDTO.class
