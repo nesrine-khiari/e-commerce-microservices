@@ -1,0 +1,14 @@
+com\orderservice\controller\OrderController.class
+com\orderservice\dto\OrderDto.class
+com\orderservice\OrderServiceApplication.class
+com\orderservice\client\ProductEndpoint.class
+com\orderservice\projection\OrderProjection.class
+com\orderservice\dto\ProductDto.class
+com\orderservice\repository\OrderProjectionRepository.class
+com\orderservice\command\CreateOrderCommand.class
+com\orderservice\command\CreateOrderCommand$CreateOrderCommandBuilder.class
+com\orderservice\query\FindProductById.class
+com\orderservice\aggregate\Order.class
+com\orderservice\service\OrderService.class
+com\orderservice\model\OrderModel.class
+com\orderservice\query\GetOrdersQuery.class

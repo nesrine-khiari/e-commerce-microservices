@@ -1,0 +1,13 @@
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\aggregate\Order.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\dto\OrderDto.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\client\ProductEndpoint.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\dto\ProductDto.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\query\FindProductById.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\projection\OrderProjection.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\command\CreateOrderCommand.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\query\GetOrdersQuery.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\model\OrderModel.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\OrderServiceApplication.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\controller\OrderController.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\service\OrderService.java
+C:\Users\omarm\IdeaProjects\projet_microservices\order-service\src\main\java\com\orderservice\repository\OrderProjectionRepository.java

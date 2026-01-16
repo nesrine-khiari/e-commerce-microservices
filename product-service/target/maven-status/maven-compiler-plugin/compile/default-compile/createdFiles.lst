@@ -1,0 +1,16 @@
+com\productservice\command\UpdateStockCommand.class
+com\productservice\ProductServiceApplication.class
+com\productservice\query\GetProductsQuery.class
+com\productservice\projection\ProductProjection.class
+com\productservice\command\CreateProductCommand$CreateProductCommandBuilder.class
+com\productservice\repository\ProductProjectionRepository.class
+com\productservice\handler\StockUpdateEventHandler.class
+com\productservice\aggregate\Product.class
+com\productservice\controller\ProductController.class
+com\productservice\command\UpdateStockCommand$UpdateStockCommandBuilder.class
+com\productservice\query\FindProductByIdQuery.class
+com\productservice\event\ProductCreatedEvent$ProductCreatedEventBuilder.class
+com\productservice\event\ProductCreatedEvent.class
+com\productservice\dto\ProductDto.class
+com\productservice\model\ProductModel.class
+com\productservice\command\CreateProductCommand.class
