@@ -6,41 +6,47 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.queryhandling.QueryBus;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class EventProcessorConfig {
 
+    /**
+     * Bean unique du LoggingInterceptor utilisé pour tous les bus.
+     */
     @Bean
     public LoggingInterceptor<Message<?>> loggingInterceptor() {
         return new LoggingInterceptor<>();
     }
 
-    @Autowired
-    public void configureLoggingInterceptorFor(CommandBus commandBus,
-                                               LoggingInterceptor<Message<?>> loggingInterceptor) {
-        commandBus.registerDispatchInterceptor(loggingInterceptor);
-        commandBus.registerHandlerInterceptor(loggingInterceptor);
-    }
+    /**
+     * ApplicationRunner qui s'exécute après le démarrage de Spring
+     * pour enregistrer le LoggingInterceptor sur tous les bus.
+     */
+    @Bean
+    public ApplicationRunner registerLoggingInterceptors(
+            CommandBus commandBus,
+            EventBus eventBus,
+            QueryBus queryBus,
+            EventProcessingConfigurer eventProcessingConfigurer,
+            LoggingInterceptor<Message<?>> loggingInterceptor
+    ) {
+        return args -> {
+            // CommandBus
+            commandBus.registerDispatchInterceptor(loggingInterceptor);
+            commandBus.registerHandlerInterceptor(loggingInterceptor);
 
-    @Autowired
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    public void configureLoggingInterceptorFor(EventBus eventBus, LoggingInterceptor<Message<?>> loggingInterceptor) {
-        eventBus.registerDispatchInterceptor(loggingInterceptor);
-    }
+            // EventBus
+            eventBus.registerDispatchInterceptor(loggingInterceptor);
 
-    @Autowired
-    public void configureLoggingInterceptorFor(EventProcessingConfigurer eventProcessingConfigurer,
-                                               LoggingInterceptor<Message<?>> loggingInterceptor) {
-        eventProcessingConfigurer.registerDefaultHandlerInterceptor((config, processorName) -> loggingInterceptor);
-    }
+            // QueryBus
+            queryBus.registerDispatchInterceptor(loggingInterceptor);
+            queryBus.registerHandlerInterceptor(loggingInterceptor);
 
-    @Autowired
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    public void configureLoggingInterceptorFor(QueryBus queryBus, LoggingInterceptor<Message<?>> loggingInterceptor) {
-        queryBus.registerDispatchInterceptor(loggingInterceptor);
-        queryBus.registerHandlerInterceptor(loggingInterceptor);
+            // EventProcessingConfigurer (pour tous les processors)
+            eventProcessingConfigurer.registerDefaultHandlerInterceptor((config, processorName) -> loggingInterceptor);
+        };
     }
 }
