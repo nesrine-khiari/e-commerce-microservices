@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @Component
-@FeignClient(name = "productQuery", url = "localhost:8080")
+@FeignClient(
+        name = "e-commerce-api",
+        url = "http://localhost:8070/api/products"
+)
 public interface ProductEndpoint {
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

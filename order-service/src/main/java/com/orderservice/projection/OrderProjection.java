@@ -1,4 +1,5 @@
 package com.orderservice.projection;
+import org.axonframework.config.ProcessingGroup;
 
 import com.core.event.OrderCreatedEvent;
 import com.orderservice.model.OrderModel;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
+@ProcessingGroup("order")
 @RequiredArgsConstructor
 public class OrderProjection {
 
