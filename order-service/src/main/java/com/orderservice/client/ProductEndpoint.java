@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Component
 @FeignClient(
         name = "e-commerce-api",
-        url = "http://localhost:8070/api/products"
+        url = "http://localhost:8070/api/products",
+        fallback = ProductClientFallback.class
 )
 public interface ProductEndpoint {
 
