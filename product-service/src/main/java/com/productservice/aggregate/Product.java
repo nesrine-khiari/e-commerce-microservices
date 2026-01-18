@@ -38,7 +38,14 @@ public class Product {
     }
 
     @CommandHandler
-    public Product(UpdateStockCommand command) {
+    public void handle(UpdateStockCommand command) {
+        System.out.println("📉 Updating stock for product: {}");
+        System.out.println( command.getProductid());
+
+        if (this.stock < command.getNumber()) {
+            throw new IllegalStateException("Stock insuffisant!");
+        }
+
         apply(new StockUpdatedEvent(
                 command.getProductid(),
                 command.getNumber()
@@ -46,19 +53,21 @@ public class Product {
     }
 
     @EventSourcingHandler
-    public void on(StockUpdatedEvent evt) {
-        id = UUID.randomUUID().toString();
-        productid = evt.getProductid();
-        stock = -evt.getNumber();
+    public void on(ProductCreatedEvent evt) {
+        System.out.println("✅ Product created event: {}");
+        System.out.println( evt.getId());
+        this.id = evt.getId();
+        this.price = evt.getPrice();
+        this.stock = evt.getStock();
+        this.name = evt.getName();
+        this.description = evt.getDescription();
     }
 
     @EventSourcingHandler
-    public void on(ProductCreatedEvent evt) {
-        id = evt.getId();
-        price = evt.getPrice();
-        stock = evt.getStock();
-        name = evt.getName();
-        description = evt.getDescription();
+    public void on(StockUpdatedEvent evt) {
+        System.out.println ("✅ Stock updated event for: {}");
+        System.out.println(evt.getProductid());
+        this.stock = this.stock - evt.getNumber();
     }
 
 }
