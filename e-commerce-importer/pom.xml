@@ -21,6 +21,7 @@
         <spring.cloud.version>2023.0.0</spring.cloud.version>
         <axon.version>4.9.3</axon.version>
         <h2.version>2.2.224</h2.version>
+        <guava.version>32.0.1-jre</guava.version>
     </properties>
 
     <!-- ===== Modules ===== -->
@@ -39,12 +40,18 @@
         <dependencies>
             <!-- Spring Boot BOM - MUST come first -->
             <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring.boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
 
             <!-- Spring Cloud BOM -->
             <dependency>
@@ -68,6 +75,12 @@
                 <groupId>org.axonframework</groupId>
                 <artifactId>axon-spring-boot-starter</artifactId>
                 <version>${axon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- H2 Database -->
