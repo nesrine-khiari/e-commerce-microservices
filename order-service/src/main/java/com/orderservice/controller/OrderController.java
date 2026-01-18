@@ -1,5 +1,6 @@
 package com.orderservice.controller;
 
+import org.springframework.web.bind.annotation.RequestMapping;
 import com.orderservice.dto.OrderDto;
 import com.orderservice.model.OrderModel;
 import com.orderservice.service.OrderService;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
+@RequestMapping("/api/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
