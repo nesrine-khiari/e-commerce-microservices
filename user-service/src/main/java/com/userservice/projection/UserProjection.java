@@ -14,7 +14,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@ProcessingGroup("user-projection")
+@ProcessingGroup("user")
 public class UserProjection {
     private final UserProjectionRepository userProjectionRepository;
 
