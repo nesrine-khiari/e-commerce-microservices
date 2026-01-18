@@ -7,6 +7,8 @@ import com.productservice.query.FindProductByIdQuery;
 import com.productservice.query.GetProductsQuery;
 import com.productservice.repository.ProductProjectionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@ProcessingGroup("product")
 @RequiredArgsConstructor
 public class ProductProjection {
     private final ProductProjectionRepository productProjectionRepository;
