@@ -75,11 +75,11 @@
         </dependency>
 
         <!--Axon Kafka -->
-        <dependency>
+        <!--Axon Kafka  <dependency>
             <groupId>org.axonframework.extensions.kafka</groupId>
             <artifactId>axon-kafka-spring-boot-starter</artifactId>
             <version>4.9.0</version>
-        </dependency>
+        </dependency> -->
     </dependencies>
 
     <build>
