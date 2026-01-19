@@ -14,11 +14,11 @@
         <relativePath>../e-commerce-importer/pom.xml</relativePath>
     </parent>
 
-    <groupId>com.order-service</groupId>
-    <artifactId>order-service</artifactId>
+    <groupId>com.payment-service</groupId>
+    <artifactId>payment-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>order-service</name>
-    <description>Order Service</description>
+    <name>payment-service</name>
+    <description>payment Service</description>
 
     <dependencies>
 
@@ -56,11 +56,6 @@
 
 
 
-
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
