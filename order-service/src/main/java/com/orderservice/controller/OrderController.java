@@ -1,4 +1,5 @@
 package com.orderservice.controller;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.orderservice.dto.OrderDto;
@@ -18,6 +19,9 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class OrderController {
 
+    @Value("${server.port}")
+    private String port;
+
     private final OrderService orderService;
 
 
@@ -29,5 +33,10 @@ public class OrderController {
     @GetMapping
     public CompletableFuture<List<OrderModel>> getOrders() {
         return orderService.getAll();
+    }
+
+    @GetMapping("/port")
+    public String getInstancePort() {
+        return "This request was handled by OrderService instance on port: " + port;
     }
 }
