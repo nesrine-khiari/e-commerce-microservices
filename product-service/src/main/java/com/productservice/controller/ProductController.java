@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +37,12 @@ public class ProductController {
 
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
+    @Value("${server.port}")
+    private String port;
+    @GetMapping("/port")
+    public String getInstancePort() {
+        return "This request was handled by ProductService instance on port: " + port;
+    }
 
     @PostMapping
     @CircuitBreaker(name = "productCommand", fallbackMethod = "createProductFallback")
