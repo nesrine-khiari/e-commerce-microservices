@@ -64,7 +64,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <!-- OpenFeign -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
