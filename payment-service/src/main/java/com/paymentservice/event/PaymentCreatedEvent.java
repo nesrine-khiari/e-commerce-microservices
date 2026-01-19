@@ -1,10 +1,9 @@
-package com.paymentservice.command;
+package com.paymentservice.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 import java.math.BigDecimal;
 
@@ -12,12 +11,11 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentCreateCommand {
-    @TargetAggregateIdentifier
+public class PaymentCreatedEvent {
     private String paymentId;
     private String orderId;
-    private BigDecimal price;
+    private BigDecimal totalAmount;
+    private String userId;
     private Integer quantity;
     private String productId;
-    private String userId;
 }

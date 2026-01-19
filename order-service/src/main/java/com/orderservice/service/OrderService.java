@@ -9,6 +9,7 @@ import com.orderservice.query.GetOrdersQuery;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import com.orderservice.repository.OrderProjectionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +32,7 @@ public class OrderService {
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
     private final ProductEndpoint productEndpoint;
+    private final OrderProjectionRepository orderRepository; // AJOUTEZ CE REPOSITORY
 
     // =======================
     // COMMAND SIDE (STRICT)
@@ -84,5 +87,33 @@ public class OrderService {
                 new GetOrdersQuery(),
                 ResponseTypes.multipleInstancesOf(OrderModel.class)
         );
+    }
+    
+    // NOUVELLES MÉTHODES POUR LA COMMUNICATION SYNCHRONE
+    
+    public boolean orderExists(String orderId) {
+        return orderRepository.existsById(orderId);
+    }
+    
+    public Optional<BigDecimal> getOrderPrice(String orderId) {
+        return orderRepository.findById(orderId)
+                .map(OrderModel::getPrice);
+    }
+    
+    public Optional<OrderModel> getOrderDetails(String orderId) {
+        return orderRepository.findById(orderId);
+    }
+    
+    public boolean updateOrderPaymentStatus(String orderId, String paymentId) {
+        Optional<OrderModel> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isPresent()) {
+            OrderModel order = optionalOrder.get();
+            // Vous pourriez ajouter un champ status dans OrderModel si nécessaire
+            // order.setStatus("PAID");
+            // order.setPaymentId(paymentId);
+            orderRepository.save(order);
+            return true;
+        }
+        return false;
     }
 }

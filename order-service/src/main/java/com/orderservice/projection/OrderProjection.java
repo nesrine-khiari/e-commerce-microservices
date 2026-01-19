@@ -6,6 +6,8 @@ import com.orderservice.model.OrderModel;
 import com.orderservice.query.GetOrdersQuery;
 import com.orderservice.repository.OrderProjectionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.queryhandling.QueryHandler;

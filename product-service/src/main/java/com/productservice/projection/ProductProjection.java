@@ -1,6 +1,7 @@
 package com.productservice.projection;
 
 import com.core.event.StockUpdatedEvent;
+
 import com.productservice.event.ProductCreatedEvent;
 import com.productservice.model.ProductModel;
 import com.productservice.query.FindProductByIdQuery;
