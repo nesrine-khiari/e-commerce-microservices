@@ -1,234 +1,225 @@
 package com.paymentservice.controller;
 
-import com.paymentservice.service.PaymentSyncService;
 import com.paymentservice.command.PaymentCreateCommand;
+import com.paymentservice.command.ConfirmPaymentCommand;
+import com.paymentservice.command.CancelPaymentCommand;
 import com.paymentservice.model.PaymentModel;
 import com.paymentservice.projection.PaymentProjection;
 import com.paymentservice.query.FindPaymentsByUserIdQuery;
 import com.paymentservice.query.GetAllPaymentsQuery;
 import com.paymentservice.query.GetPaymentQuery;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.paymentservice.service.PaymentSyncService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 public class PaymentController {
 
     private final QueryGateway queryGateway;
     private final CommandGateway commandGateway;
     private final PaymentSyncService paymentSyncService;
-    
-    @Autowired
-    private PaymentProjection paymentProjection;
-    
-    // ========== DTOs ==========
-    @Data @AllArgsConstructor @NoArgsConstructor
-    public static class CreatePaymentRequest {
-        private String orderId; private BigDecimal price; 
-        private Integer quantity; private String productId; private String userId;
-    }
-    
-    @Data @AllArgsConstructor @NoArgsConstructor  
-    public static class CreatePaymentViaCommandRequest {
-        private String orderId; private BigDecimal price; 
-        private Integer quantity; private String productId; private String userId;
-    }
-    
-    // ========== ENDPOINTS DE COMMUNICATION SYNCHRONE ==========
-    
-    /**
-     * ENDPOINT 1: PAIEMENT AVEC VALIDATION SYNCHRONE
-     * UTILITÉ : Démontre la communication synchrone avec Order Service
-     */
+    private final PaymentProjection paymentProjection;
+
+    // ===================== DTO =====================
+    public static record CreatePaymentRequest(
+            String orderId,
+            String userId,
+            Integer quantity,
+            BigDecimal price,
+            String productId
+    ) {}
+
+    // ===================== SYNCHRONE =====================
     @PostMapping("/sync-validation")
-public CompletableFuture<Map<String, Object>> createPaymentWithSyncValidation(
-        @RequestBody CreatePaymentRequest request) {
+    public CompletableFuture<ResponseEntity<Map<String, Object>>> createPayment(
+            @RequestBody CreatePaymentRequest request
+    ) {
+        log.info("SYNC PAYMENT orderId={} userId={} quantity={}",
+                request.orderId(), request.userId(), request.quantity());
 
-    log.info("POST /sync-validation → orderId={}, userId={}, quantity={}",
-            request.getOrderId(),
-            request.getUserId(),
-            request.getQuantity());
+        return paymentSyncService.createPaymentWithSyncValidation(
+                request.orderId(),
+                request.userId(),
+                request.quantity()
+        );
+    }
 
-    return paymentSyncService.createPaymentWithSyncValidation(
-            request.getOrderId(),
-            request.getUserId(),
-            request.getQuantity()
-    );
-}
-    
-    /**
-     * ENDPOINT 2: TEST SIMPLE DE COMMUNICATION SYNCHRONE
-     * UTILITÉ : Teste juste la connexion, ne crée pas de paiement
-     */
     @GetMapping("/test-connection/{orderId}")
-    public CompletableFuture<ResponseEntity<?>> testSyncConnection(@PathVariable String orderId) {
-        log.info("🧪 GET /test-connection: Test communication synchrone");
-        
-        return paymentSyncService.createPaymentWithSyncValidation(orderId, "TEST-USER", 1)
-            .thenApply(result -> {
-                if (result.containsKey("fallbackTriggered")) {
-                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                        .body(Map.of(
-                            "test", "COMMUNICATION_TEST",
-                            "result", "FAILED - Order Service unavailable",
-                            "details", result
-                        ));
-                }
-                
-                return ResponseEntity.ok(Map.of(
-                    "test", "COMMUNICATION_TEST",
-                    "result", "SUCCESS - Order Service responding",
-                    "details", result
-                ));
-            });
+    public CompletableFuture<ResponseEntity<?>> testConnection(
+            @PathVariable String orderId,
+            HttpServletRequest request
+    ) {
+        return paymentSyncService.createPaymentWithSyncValidation(orderId, "TEST", 1)
+                .thenApply(result -> {
+                    int port = request.getLocalPort();
+                    log.info("Test connection - Instance port: {}", port);
+                    return ResponseEntity.ok(Map.of(
+                            "instancePort", port,
+                            "result", result
+                    ));
+                });
     }
-    
-    /**
-     * ENDPOINT 3: DÉMONSTRATION POUR LE DEVOIR
-     */
-    @GetMapping("/architecture")
-    public ResponseEntity<?> showArchitecture() {
-        return ResponseEntity.ok(Map.of(
-            "microservice", "payment-service",
-            "communicationTypes", Map.of(
-                "asynchrone", Map.of(
-                    "framework", "Axon",
-                    "patterns", new String[]{"CQRS", "Event Sourcing"},
-                    "endpoints", new String[]{"/via-command", "/via-projection"}
-                ),
-                "synchrone", Map.of(
-                    "framework", "Spring Cloud OpenFeign",
-                    "patterns", new String[]{"Circuit Breaker", "Retry", "Rate Limiter"},
-                    "purpose", "Valider commande avant paiement",
-                    "endpoint", "/sync-validation"
-                )
-            ),
-            "assignmentRequirements", Map.of(
-                "communicationSynchrone", "✓ Feign Client + REST API",
-                "resilience4j", Map.of(
-                    "circuitBreaker", "✓ Configuré",
-                    "retry", "✓ 3 tentatives, 500ms pause",
-                    "rateLimiter", "✓ 5 requêtes/seconde",
-                    "fallback", "✓ Méthodes implémentées"
-                )
-            )
-        ));
-    }
-    
-    /**
-     * ENDPOINT 4: DÉMONSTRATION DES 5 DÉFAILLANCES
-     */
-    @GetMapping("/failure-types")
-    public ResponseEntity<?> demonstrateFailureTypes() {
-        return ResponseEntity.ok(Map.of(
-            "assignment", "Gestion des 5 types de défaillance",
-            "implementation", "Dans PaymentSyncService avec Resilience4j",
-            "testEndpoint", "POST /api/payments/sync-validation",
-            "expectedResults", Map.of(
-                "Order Service disponible", "Payment created",
-                "Order Service éteint", "Error message - Payment NOT created",
-                "Order Service lent", "Timeout error"
-            )
-        ));
-    }
-    
-    // ========== ENDPOINTS ASYNCHRONES EXISTANTS ==========
-    
+
+    // ===================== ASYNCHRONE (CQRS) =====================
     @PostMapping("/via-command")
-    public CompletableFuture<String> createPaymentViaCommand(@RequestBody CreatePaymentViaCommandRequest request) {
-        log.info("🎯 POST /via-command: Creating payment via Axon Command");
-        
+    public CompletableFuture<String> createViaCommand(@RequestBody CreatePaymentRequest request) {
         String paymentId = "PAY-" + UUID.randomUUID().toString().substring(0, 8);
-        
+
         PaymentCreateCommand command = PaymentCreateCommand.builder()
                 .paymentId(paymentId)
-                .orderId(request.getOrderId())
-                .price(request.getPrice())
-                .quantity(request.getQuantity())
-                .productId(request.getProductId())
-                .userId(request.getUserId())
+                .orderId(request.orderId())
+                .price(request.price())
+                .quantity(request.quantity())
+                .productId(request.productId())
+                .userId(request.userId())
                 .build();
-        
+
         return commandGateway.send(command)
-                .thenApply(result -> "✅ Payment created via command with ID: " + paymentId)
-                .exceptionally(ex -> "❌ Error: " + ex.getMessage());
-    }
-    
-    @PostMapping("/via-projection")
-    public String createPaymentViaProjection(@RequestBody CreatePaymentRequest request) {
-        log.info("🎯 POST /via-projection: Creating payment directly via projection");
-        
-        String paymentId = "PAY-PROJ-" + UUID.randomUUID().toString().substring(0, 8);
-        BigDecimal totalAmount = request.getPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
-        
-        com.paymentservice.event.PaymentCreatedEvent event = 
-            com.paymentservice.event.PaymentCreatedEvent.builder()
-                .paymentId(paymentId)
-                .orderId(request.getOrderId())
-                .totalAmount(totalAmount)
-                .userId(request.getUserId())
-                .quantity(request.getQuantity())
-                .productId(request.getProductId())
-                .build();
-        
-        try {
-            paymentProjection.on(event);
-            return "✅ Payment created via projection with ID: " + paymentId;
-        } catch (Exception e) {
-            return "❌ Error: " + e.getMessage();
-        }
-    }
-    
-    // ========== ENDPOINTS GET EXISTANTS ==========
-    
-    @GetMapping
-    public CompletableFuture<List<PaymentModel>> getAllPayments() {
-        return queryGateway.query(new GetAllPaymentsQuery(), 
-            ResponseTypes.multipleInstancesOf(PaymentModel.class));
+                .thenApply(r -> "Payment created: " + paymentId);
     }
 
-    @GetMapping("/{paymentId}")
-    public CompletableFuture<PaymentModel> getPayment(@PathVariable String paymentId) {
-        return queryGateway.query(new GetPaymentQuery(paymentId), 
-            ResponseTypes.instanceOf(PaymentModel.class));
+    @PostMapping("/via-projection")
+    public String createViaProjection(@RequestBody CreatePaymentRequest request) {
+        String paymentId = "PAY-PROJ-" + UUID.randomUUID().toString().substring(0, 8);
+
+        paymentProjection.on(
+                com.paymentservice.event.PaymentCreatedEvent.builder()
+                        .paymentId(paymentId)
+                        .orderId(request.orderId())
+                        .totalAmount(request.price().multiply(BigDecimal.valueOf(request.quantity())))
+                        .userId(request.userId())
+                        .quantity(request.quantity())
+                        .productId(request.productId())
+                        .build()
+        );
+
+        return "Payment created via projection: " + paymentId;
+    }
+
+    // ===================== QUERIES =====================
+    @GetMapping
+    public CompletableFuture<List<PaymentModel>> getAll() {
+        return queryGateway.query(
+                new GetAllPaymentsQuery(),
+                ResponseTypes.multipleInstancesOf(PaymentModel.class)
+        );
+    }
+
+    @GetMapping("/{id}")
+    public CompletableFuture<ResponseEntity<?>> getById(  // Changé ici
+                                                          @PathVariable("id") String paymentId
+    ) {
+        log.info("Fetching payment with id: {}", paymentId);
+
+        return queryGateway.query(
+                new GetPaymentQuery(paymentId),
+                ResponseTypes.instanceOf(PaymentModel.class)
+        ).thenApply(payment -> {
+            log.debug("Payment found: {}", payment != null);
+            if (payment == null) {
+                log.warn("Payment not found: {}", paymentId);
+                return ResponseEntity.status(404).body(
+                        Map.of("error", "Payment not found", "paymentId", paymentId)
+                );
+            }
+            return ResponseEntity.ok(payment);
+        }).exceptionally(ex -> {
+            log.error("Error fetching payment {}", paymentId, ex);
+            return ResponseEntity.status(500).body(
+                    Map.of(
+                            "error", "Internal server error",
+                            "paymentId", paymentId,
+                            "message", ex.getMessage(),
+                            "exceptionType", ex.getClass().getName()
+                    )
+            );
+        });
     }
 
     @GetMapping("/user/{userId}")
-    public CompletableFuture<List<PaymentModel>> getPaymentsByUserId(@PathVariable String userId) {
-        return queryGateway.query(new FindPaymentsByUserIdQuery(userId), 
-            ResponseTypes.multipleInstancesOf(PaymentModel.class));
+    public CompletableFuture<ResponseEntity<?>> getByUser(
+            @PathVariable("userId") String userId
+    ) {
+        log.info("Fetching payments for user: {}", userId);
+
+        CompletableFuture<List<PaymentModel>> paymentsFuture = queryGateway.query(
+                new FindPaymentsByUserIdQuery(userId),
+                ResponseTypes.multipleInstancesOf(PaymentModel.class)
+        );
+
+        return paymentsFuture.thenApply(payments -> {
+            log.debug("Found {} payments for user {}", payments != null ? payments.size() : 0, userId);
+            if (payments == null || payments.isEmpty()) {
+                // On cast explicitement pour aider le compilateur
+                return (ResponseEntity<?>) ResponseEntity.ok(Collections.emptyList());
+            }
+            // On cast explicitement pour aider le compilateur
+            return (ResponseEntity<?>) ResponseEntity.ok(payments);
+        }).exceptionally(ex -> {
+            log.error("Error fetching payments for user {}", userId, ex);
+            Map<String, Object> errorResponse = Map.of(
+                    "error", "Internal server error",
+                    "userId", userId,
+                    "message", ex.getMessage(),
+                    "exceptionType", ex.getClass().getName()
+            );
+            // On cast explicitement pour aider le compilateur
+            return (ResponseEntity<?>) ResponseEntity.status(500).body(errorResponse);
+        });
     }
 
+    // ===================== HEALTH =====================
     @GetMapping("/health")
-    public ResponseEntity<?> health() {
-        return ResponseEntity.ok(Map.of(
-            "service", "payment-service",
-            "status", "UP",
-            "port", 8086,
-            "endpoints", new String[]{
-                "POST /api/payments/sync-validation (synchrone)",
-                "POST /api/payments/via-command (asynchrone)",
-                "GET /api/payments/architecture (demo)"
-            }
-        ));
+    public Map<String, Object> health(HttpServletRequest request) {
+        int port = request.getLocalPort();
+        log.info("Health check - Instance port: {}", port);
+
+        return Map.of(
+                "service", "payment-service",
+                "instancePort", port,
+                "status", "UP",
+                "timestamp", new Date(),
+                "instanceId", getInstanceId(port)
+        );
     }
+
+    // Méthode pour générer un ID d'instance unique
+    private String getInstanceId(int port) {
+        return "payment-service-instance-" + port + "-" + UUID.randomUUID().toString().substring(0, 4);
+    }
+
+
+    @PostMapping("/{paymentId}/confirm")
+    public CompletableFuture<ResponseEntity<String>> confirmPayment(
+            @PathVariable String paymentId
+    ) {
+        return commandGateway.send(new ConfirmPaymentCommand(paymentId))
+                .thenApply(r -> ResponseEntity.ok("Payment confirmed"))
+                .exceptionally(ex -> ResponseEntity.status(400)
+                        .body("Failed to confirm payment: " + ex.getMessage()));
+    }
+
+    @PostMapping("/{paymentId}/cancel")
+    public CompletableFuture<ResponseEntity<String>> cancelPayment(@PathVariable String paymentId) {
+        return commandGateway.send(new CancelPaymentCommand(paymentId))
+                .thenApply(r -> ResponseEntity.ok("Payment canceled"))
+                .exceptionally(ex -> ResponseEntity.status(400)
+                        .body("Failed to cancel payment: " + ex.getMessage()));
+    }
+
 }
