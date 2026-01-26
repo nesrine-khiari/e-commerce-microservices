@@ -32,24 +32,19 @@ public class OrderService {
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
     private final ProductEndpoint productEndpoint;
-    private final OrderProjectionRepository orderRepository; // AJOUTEZ CE REPOSITORY
+    private final OrderProjectionRepository orderRepository;
 
     // =======================
     // COMMAND SIDE (STRICT)
     // =======================
-    @CircuitBreaker(name = "productCommand", fallbackMethod = "createFallback")
-    @Retry(name = "productCommand")
-    @RateLimiter(name = "productCommand")
     public void create(OrderDto orderDto) {
+        // Step 1: Get product with resilience protection
+        ProductDto productDto = getProductWithResilience(orderDto.getProductid());
 
-        ProductDto productDto =
-                productEndpoint.getById(orderDto.getProductid());
+        // Step 2: Business validation (NOT protected - fails fast with proper HTTP codes)
+        validateOrder(productDto, orderDto);
 
-        // Business validation (NO retry)
-        if (productDto == null || productDto.getStock() <= 0) {
-            throw new IllegalStateException("Product unavailable or out of stock");
-        }
-
+        // Step 3: Create and send command
         CreateOrderCommand cmd = new CreateOrderCommand(
                 UUID.randomUUID().toString(),
                 productDto.getPrice(),
@@ -62,21 +57,40 @@ public class OrderService {
     }
 
     // =======================
-    // FALLBACK (MANDATORY)
+    // RESILIENCE LAYER (Infrastructure only)
     // =======================
-    public void createFallback(OrderDto orderDto, Throwable ex) {
+    @CircuitBreaker(name = "productCommand", fallbackMethod = "getProductFallback")
+    @Retry(name = "productCommand")
+    @RateLimiter(name = "productCommand")
+    private ProductDto getProductWithResilience(String productId) {
+        return productEndpoint.getById(productId);
+    }
 
-        log.error(
-                "Product service unavailable. Order NOT created. productId={}",
-                orderDto.getProductid(),
-                ex
-        );
-
-        // Convert infra failure → clean business HTTP error
+    private ProductDto getProductFallback(String productId, Throwable ex) {
+        log.error("Product service unavailable. productId={}", productId, ex);
         throw new ResponseStatusException(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "Product service temporarily unavailable. Please try again later."
         );
+    }
+
+    // =======================
+    // BUSINESS VALIDATION (No resilience - fail fast)
+    // =======================
+    private void validateOrder(ProductDto productDto, OrderDto orderDto) {
+        if (productDto == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Product not found"
+            );
+        }
+
+        if (productDto.getStock() < orderDto.getNumber()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Insufficient stock available"
+            );
+        }
     }
 
     // =======================
@@ -88,29 +102,30 @@ public class OrderService {
                 ResponseTypes.multipleInstancesOf(OrderModel.class)
         );
     }
-    
-    // NOUVELLES MÉTHODES POUR LA COMMUNICATION SYNCHRONE
-    
+
+    // =======================
+    // SYNCHRONOUS QUERIES (Read-only - OK for CQRS)
+    // =======================
     public boolean orderExists(String orderId) {
         return orderRepository.existsById(orderId);
     }
-    
+
     public Optional<BigDecimal> getOrderPrice(String orderId) {
         return orderRepository.findById(orderId)
                 .map(OrderModel::getPrice);
     }
-    
+
     public Optional<OrderModel> getOrderDetails(String orderId) {
         return orderRepository.findById(orderId);
     }
-    
+
+    // WARNING: This violates CQRS - should use Command/Event pattern instead
     public boolean updateOrderPaymentStatus(String orderId, String paymentId) {
         Optional<OrderModel> optionalOrder = orderRepository.findById(orderId);
         if (optionalOrder.isPresent()) {
             OrderModel order = optionalOrder.get();
-            // Vous pourriez ajouter un champ status dans OrderModel si nécessaire
-            // order.setStatus("PAID");
-            // order.setPaymentId(paymentId);
+            // TODO: Replace with proper CQRS command:
+            // commandGateway.sendAndWait(new MarkOrderAsPaidCommand(orderId, paymentId));
             orderRepository.save(order);
             return true;
         }
