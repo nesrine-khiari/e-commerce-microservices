@@ -1,15 +1,18 @@
 package com.productservice.aggregate;
 
 import com.core.event.StockUpdatedEvent;
+import com.productservice.client.OrderServiceClient;
 import com.productservice.command.CreateProductCommand;
 import com.productservice.command.UpdateStockCommand;
 import com.productservice.event.ProductCreatedEvent;
+import jakarta.persistence.Transient;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -27,6 +30,10 @@ public class Product {
     private Integer stock;
     private String name;
     private String description;
+
+    @Autowired
+    @Transient  // Ne pas persister ce champ
+    private transient OrderServiceClient orderServiceClient;
 
     @CommandHandler
     public Product(CreateProductCommand command) {
@@ -90,5 +97,22 @@ public class Product {
         this.stock = this.stock - evt.getNumber();
 
         log.info("   - Stock after: {}", this.stock);
+
+        // ⭐ NOTIFICATION DE RUPTURE DE STOCK (AJOUT MINIMAL)
+        if (this.stock <= 0) {
+            log.warn("⚠️ RUPTURE DE STOCK détectée pour le produit: {}", evt.getProductid());
+
+            try {
+                if (orderServiceClient != null) {
+                    orderServiceClient.notifyOutOfStock(evt.getProductid());
+                    log.info("✅ Order Service notifié de la rupture de stock");
+                } else {
+                    log.warn("⚠️ OrderServiceClient non disponible - notification ignorée");
+                }
+            } catch (Exception e) {
+                log.error("❌ Échec de notification à Order Service: {}", e.getMessage());
+                // On ne bloque pas le processus si la notification échoue
+            }
+        }
     }
 }
